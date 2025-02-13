@@ -1,24 +1,38 @@
 """Interface for ``python -m kocker``."""
 
-from argparse import ArgumentParser
-from collections.abc import Sequence
+from typing import Optional
 
 from . import __version__
 
 __all__ = ["main"]
 
+import typer
 
-def main(args: Sequence[str] | None = None) -> None:
-    """Argument parser for the CLI."""
-    parser = ArgumentParser()
-    parser.add_argument(
-        "-v",
+
+def version_callback(value: bool):
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
+cli = typer.Typer()
+
+@cli.callback()
+def main(
+    ctx: typer.Context,
+    version: Optional[bool] = typer.Option(  # noqa (Optional required for typer)
+        None,
         "--version",
-        action="version",
-        version=__version__,
-    )
-    parser.parse_args(args)
+        callback=version_callback,
+        is_eager=True,
+        help="Log the version of kocker",
+    ),):
+    pass
 
+@cli.command()
+def version(name: str):
+    """Log the version of kocker"""
+    typer.echo(__version__)
 
 if __name__ == "__main__":
-    main()
+    cli()

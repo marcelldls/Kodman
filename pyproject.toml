@@ -12,7 +12,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 description = "A command-line tool that provides a Docker-like interface for Kubernetes operations"
-dependencies = [] # Add project dependencies here, e.g. ["click", "numpy"]
+dependencies = ["typer"] # Add project dependencies here, e.g. ["click", "numpy"]
 dynamic = ["version"]
 license.file = "LICENSE"
 readme = "README.md"
@@ -32,7 +32,7 @@ dev = [
 ]
 
 [project.scripts]
-kocker = "kocker.__main__:main"
+kocker = "kocker.__main__:cli"
 
 [project.urls]
 GitHub = "https://github.com/marcelldls/kocker"
