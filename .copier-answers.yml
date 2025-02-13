@@ -1,0 +1,16 @@
+# Changes here will be overwritten by Copier
+_commit: 2.6.0
+_src_path: gh:DiamondLightSource/python-copier-template
+author_email: marcell.nagy@diamond.ac.uk
+author_name: Marcell Nagy
+description: A command-line tool that provides a Docker-like interface for Kubernetes
+    operations
+distribution_name: kocker
+docker: false
+docs_type: README
+git_platform: github.com
+github_org: marcelldls
+package_name: kocker
+pypi: true
+repo_name: kocker
+type_checker: pyright
