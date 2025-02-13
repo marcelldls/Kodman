@@ -5,28 +5,17 @@
 
 # kocker
 
-A command-line tool that provides a Docker-like interface for Kubernetes operations
+A command-line tool that provides a Docker-like interface for Kubernetes operations.
 
-This is where you should write a short paragraph that describes what your module does,
-how it does it, and why people should use it.
+An example usecase would be to facilitate a single CI script where the runner could be
+a host with Docker (for example the local machine) or Kubernetes runner (In a CI job).
 
 Source          | <https://github.com/marcelldls/kocker>
 :---:           | :---:
 PyPI            | `pip install kocker`
 Releases        | <https://github.com/marcelldls/kocker/releases>
 
-This is where you should put some images or code snippets that illustrate
-some relevant examples. If it is a library then you might put some
-introductory code here:
-
-```python
-from kocker import __version__
-
-print(f"Hello kocker {__version__}")
+Some examples:
 ```
-
-Or if it is a commandline tool then you might put some example commands here:
-
-```
-python -m kocker --version
+kocker --version
 ```
