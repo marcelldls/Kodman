@@ -4,7 +4,7 @@ from typing import Type
 
 class Command(ABC):
     @abstractmethod
-    def do(self, args):
+    def do(self, args, ctx):
         pass
     @abstractmethod
     def add(self, parser):
@@ -14,6 +14,7 @@ class ArgparseEngine:
     def __init__(self):
         self._parser = argparse.ArgumentParser(description='Main program')
         self._subparsers = self._parser.add_subparsers(dest='cli_command')
+        self._ctx = None
         self._args = []
         self._commands = []
 
@@ -29,4 +30,4 @@ class ArgparseEngine:
 
         for command in self._commands:
             if args.cli_command == command.__class__.__name__.lower():
-                command.do(args)
+                command.do(args, self._ctx)
