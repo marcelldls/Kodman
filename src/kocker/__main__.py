@@ -1,55 +1,93 @@
-from . import __version__
-from .engine import ArgparseEngine, Command
-from .backend import Backend
 import argparse
+import logging
+
+from . import __version__
+from .backend import Backend, DeleteOptions, RunOptions
+from .engine import ArgparseEngine, Command
+
 __all__ = ["main"]
+log = logging.getLogger("kocker")
 
 
 class KockerEngine(ArgparseEngine):
     def __init__(self):
         super().__init__()
         self._parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version=__version__,
+            "-v",
+            "--version",
+            action="version",
+            version=__version__,
         )
         self._ctx = Backend()
 
+
 engine = KockerEngine()
+
 
 @engine.add_command
 class Run(Command):
-
     def add(self, parser):
-        parser_run = parser.add_parser('run', help='Run a command in a new container')
-        parser_run.add_argument('--entrypoint', type=str, help=' Overwrite the default ENTRYPOINT of the image')
-        parser_run.add_argument('--rm', help='Remove container and any anonymous unnamed volume associated with the container after exit', action="store_true")
-        parser_run.add_argument('--volume','-v', type=str, action="append", help='Bind mount a volume into the container')
-        parser_run.add_argument('image')
-        parser_run.add_argument('command', nargs="?")
-        parser_run.add_argument('args', nargs=argparse.REMAINDER, default=[])
+        parser_run = parser.add_parser("run", help="Run a command in a new container")
+        parser_run.add_argument(
+            "--entrypoint",
+            type=str,
+            help=" Overwrite the default ENTRYPOINT of the image",
+        )
+        parser_run.add_argument(
+            "--rm",
+            help="Remove container and any anonymous unnamed volume associated with the container after exit",
+            action="store_true",
+        )
+        parser_run.add_argument(
+            "--volume",
+            "-v",
+            type=str,
+            action="append",
+            help="Bind mount a volume into the container",
+        )
+        parser_run.add_argument("image")
+        parser_run.add_argument("command", nargs="?")
+        parser_run.add_argument("args", nargs=argparse.REMAINDER, default=[])
 
     def do(self, args, ctx):
-        print(f"Image: {args.image}")
-        if args.command:
-            print(f"Command: {' '.join(args.command)}")
+        log.debug(f"Image: {args.image}")
+        exec_command = ""
+        exec_args = []
+        if args.entrypoint:
+            exec_command = args.entrypoint
+            if args.command:
+                exec_args.append(args.command)
+        elif args.command:
+            exec_command = args.command
         if args.args:
-            print(f"Args: {args.args}")
+            exec_args += args.args
 
-        ctx.run()
+        log.debug(f"Command: {exec_command}")
+        log.debug(f"Args: {exec_args}")
+        exec = [exec_command] + exec_args
+
+        options = RunOptions(
+            image=args.image,
+            command=exec,
+        )
+
+        pod_name = ctx.run(options, rm=args.rm)
+        if args.rm:
+            ctx.delete(DeleteOptions(pod_name))
+
 
 @engine.add_command
 class Version(Command):
-
     def add(self, parser):
-        parser.add_parser('version', help='Display the Kocker version information')
+        parser.add_parser("version", help="Display the Kocker version information")
 
     def do(self, args, ctx):
         print(__version__)
 
+
 def cli():
     engine.launch()
+
 
 if __name__ == "__main__":
     cli()

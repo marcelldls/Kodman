@@ -12,7 +12,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 description = "A command-line tool that provides a Docker-like interface for Kubernetes operations"
-dependencies = ["typer"] # Add project dependencies here, e.g. ["click", "numpy"]
+dependencies = [
+    "typer",
+    "kubernetes@git+https://github.com/kubernetes-client/python#master",
+] # Add project dependencies here, e.g. ["click", "numpy"]
 dynamic = ["version"]
 license.file = "LICENSE"
 readme = "README.md"
@@ -47,7 +50,7 @@ version_file = "src/kocker/_version.py"
 
 [tool.pyright]
 typeCheckingMode = "standard"
-reportMissingImports = false # Ignore missing stubs in imported modules
+reportMissingImports = false  # Ignore missing stubs in imported modules
 
 [tool.pytest.ini_options]
 # Run pytest with all our checkers, and don't spam us with massive tracebacks on error
