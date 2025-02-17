@@ -155,18 +155,21 @@ class Backend:
         # Mount volumes
         if options.volumes:
             for volume in options.volumes:
-                src, dst = volume.split(":")
-                src_path = Path(src).resolve()
-                dst_path = Path(dst)
-                if not dst_path.is_absolute():
+                process = volume.split(":")
+                src = Path(process[0]).resolve()
+                try:
+                    dst = Path(process[1])
+                except IndexError:
+                    dst = src
+                if not dst.is_absolute():
                     raise ValueError("Destination path must be absolute")
-                log.debug(f"Transfer {src_path} to {dst_path}")
+                log.debug(f"Transfer {src} to {dst}")
                 cp_k8s(
                     self._client,
                     self._context["namespace"],
                     unique_pod_name,
-                    src_path,
-                    dst_path,
+                    src,
+                    dst,
                 )
 
         # Calling exec interactively
