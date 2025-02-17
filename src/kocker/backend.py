@@ -1,7 +1,10 @@
+import io
 import logging
 import sys
+import tarfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 from kubernetes import client, config
 from kubernetes.client.models.v1_pod import V1Pod
@@ -20,12 +23,14 @@ log.addHandler(handler)
 class RunOptions:
     image: str
     command: list[str]
+    volumes: list[str] = field(default_factory=lambda: [])
 
     def __hash__(self):
         _hash = hash(
             (
                 self.image,
                 tuple(self.command),  # Make hashable
+                tuple(self.volumes),
                 time.time(),  # Add timestamp
             )
         )
@@ -36,6 +41,51 @@ class RunOptions:
 @dataclass(frozen=True)
 class DeleteOptions:
     name: str
+
+
+def cp_k8s(
+    kube_conn: client.CoreV1Api,
+    namespace: str,
+    pod_name: str,
+    source_path: Path,
+    dest_path: Path,
+):
+    buf = io.BytesIO()
+    if not source_path.is_dir() and dest_path.is_dir():
+        arcname = dest_path.joinpath(source_path.name)
+    else:
+        arcname = dest_path
+
+    with tarfile.open(fileobj=buf, mode="w:tar") as tar:
+        tar.add(source_path, arcname=arcname)
+    commands = [buf.getvalue()]
+
+    # Copying file
+    exec_command = ["tar", "xvf", "-", "-C", "/"]
+    resp = stream(
+        kube_conn.connect_get_namespaced_pod_exec,
+        pod_name,
+        namespace,
+        command=exec_command,
+        stderr=True,
+        stdin=True,
+        stdout=True,
+        tty=False,
+        _preload_content=False,
+    )
+
+    while resp.is_open():
+        resp.update(timeout=1)
+        if resp.peek_stdout():
+            print(f"STDOUT: {resp.read_stdout()}")
+        if resp.peek_stderr():
+            print(f"STDERR: {resp.read_stderr()}")
+        if commands:
+            c = commands.pop(0)
+            resp.write_stdin(c)
+        else:
+            break
+    resp.close()
 
 
 class Backend:
@@ -59,7 +109,7 @@ class Backend:
         log.debug(f"  Namespace: {self._context['namespace']}")
         log.debug(f"  User: {self._context['user']}")
 
-    def run(self, options: RunOptions, rm=True) -> str:
+    def run(self, options: RunOptions) -> str:
         unique_pod_name = f"kocker-run-{hash(options)}"
         pod_manifest = {
             "apiVersion": "v1",
@@ -82,6 +132,7 @@ class Backend:
                 ]
             },
         }
+
         log.debug(f"Creating pod: {unique_pod_name}")
         self._client.create_namespaced_pod(
             body=pod_manifest, namespace=self._context["namespace"]
@@ -101,6 +152,23 @@ class Backend:
             else:
                 raise TypeError("Unexpected response type")
 
+        # Mount volumes
+        if options.volumes:
+            for volume in options.volumes:
+                src, dst = volume.split(":")
+                src_path = Path(src).resolve()
+                dst_path = Path(dst)
+                if not dst_path.is_absolute():
+                    raise ValueError("Destination path must be absolute")
+                log.debug(f"Transfer {src_path} to {dst_path}")
+                cp_k8s(
+                    self._client,
+                    self._context["namespace"],
+                    unique_pod_name,
+                    src_path,
+                    dst_path,
+                )
+
         # Calling exec interactively
         log.debug("Execution start")
         exec_resp = stream(
@@ -118,9 +186,9 @@ class Backend:
         while exec_resp.is_open():
             exec_resp.update(timeout=5)
             if exec_resp.peek_stdout():
-                print(exec_resp.read_stdout())
+                print(exec_resp.read_stdout().rstrip())
             if exec_resp.peek_stderr():
-                print(exec_resp.read_stderr())
+                print(exec_resp.read_stderr().rstrip())
         log.debug("Execution complete")
         exec_resp.close()
 
@@ -135,6 +203,7 @@ class Backend:
             self._client.delete_namespaced_pod(
                 name=options.name,
                 namespace=self._context["namespace"],
+                grace_period_seconds=2,  # Is this too aggressive?
             )
             log.debug("Awaiting pod cleanup...")
             while exists_resp:

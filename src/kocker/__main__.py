@@ -69,9 +69,10 @@ class Run(Command):
         options = RunOptions(
             image=args.image,
             command=exec,
+            volumes=args.volume,
         )
 
-        pod_name = ctx.run(options, rm=args.rm)
+        pod_name = ctx.run(options)
         if args.rm:
             ctx.delete(DeleteOptions(pod_name))
 
