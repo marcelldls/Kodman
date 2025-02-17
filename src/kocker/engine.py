@@ -1,6 +1,5 @@
 import argparse
 from abc import ABC, abstractmethod
-from typing import Type
 
 
 class Command(ABC):
@@ -21,7 +20,7 @@ class ArgparseEngine:
         self._args = []
         self._commands = []
 
-    def add_command(self, command: Type[Command]):
+    def add_command(self, command: type[Command]):
         self._commands.append(command())
 
     def launch(self):
