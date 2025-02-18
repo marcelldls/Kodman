@@ -137,7 +137,11 @@ class Backend:
                         "command": [
                             "sh",
                             "-c",
-                            'until [ -f /tmp/trigger ]; do echo "Waiting for trigger..."; sleep 1; done; echo "Trigger file found!"',
+                            "until [ -f /tmp/trigger ];"
+                            'do echo "Waiting for trigger...";'
+                            "sleep 1;"
+                            "done;"
+                            'echo "Trigger file found!"',
                         ],
                     },
                 ],
