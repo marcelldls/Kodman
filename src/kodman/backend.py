@@ -143,20 +143,17 @@ class Backend:
                             "done;"
                             'echo "Trigger file found!"',
                         ],
+                        "volumeMounts": [],
                     },
                 ],
                 "containers": [
                     {
                         "image": options.image,
                         "name": "kodman-exec",
+                        "volumeMounts": [],
                     }
                 ],
-                "volumes": [
-                    {
-                        "name": "shared-data",
-                        "emptyDir": {},
-                    }
-                ],
+                "volumes": [],
             },
         }
 
@@ -168,22 +165,30 @@ class Backend:
             pod_manifest["spec"]["containers"][0]["args"] = options.args
 
         if options.volumes:
-            for volume in options.volumes:
+            for i, volume in enumerate(options.volumes):
                 process = volume.split(":")
                 src = Path(process[0]).resolve()
+                dst = src
                 try:
                     dst = Path(process[1])
                 except IndexError:
-                    dst = src
+                    pass
                 if not dst.is_absolute():
                     raise ValueError("Destination path must be absolute")
+                log.debug(f"Mount: {src} to {dst}")
 
-            pod_manifest["spec"]["initContainers"][0]["volumeMounts"] = [
-                {"name": "shared-data", "mountPath": str(dst)}
-            ]
-            pod_manifest["spec"]["containers"][0]["volumeMounts"] = [
-                {"name": "shared-data", "mountPath": str(dst)}
-            ]
+                pod_manifest["spec"]["initContainers"][0]["volumeMounts"].append(
+                    {"name": f"shared-data-{i}", "mountPath": str(dst)}
+                )
+                pod_manifest["spec"]["containers"][0]["volumeMounts"].append(
+                    {"name": f"shared-data-{i}", "mountPath": str(dst)}
+                )
+                pod_manifest["spec"]["volumes"].append(
+                    {
+                        "name": f"shared-data-{i}",
+                        "emptyDir": {},
+                    }
+                )
 
         # Schedule pod and block
         log.debug(f"Creating pod: {unique_pod_name}")
