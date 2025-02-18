@@ -54,6 +54,7 @@ class Run(Command):
         parser_run.add_argument("args", nargs=argparse.REMAINDER, default=[])
 
     def do(self, args, ctx):
+        ctx.connect()
         log.debug(f"Image: {args.image}")
         pod_name = ""
         exec_command = ""

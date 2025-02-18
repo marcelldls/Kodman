@@ -94,6 +94,9 @@ def cp_k8s(
 
 class Backend:
     def __init__(self):
+        self.return_code = 0
+
+    def connect(self):
         # Load config for user/serviceaccount https://github.com/kubernetes-client/python/issues/1005
         try:
             log.debug(
@@ -106,7 +109,6 @@ class Backend:
             config.load_incluster_config()
             log.debug("Loaded in-cluster config successfully")
 
-        self.return_code = 0
         self._client = client.CoreV1Api()
         self._context = config.list_kube_config_contexts()[1]["context"]
         log.debug("The current context is:")
