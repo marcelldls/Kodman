@@ -5,8 +5,12 @@ from . import __version__
 from .backend import Backend, DeleteOptions, RunOptions
 from .engine import ArgparseEngine, Command
 
-__all__ = ["main"]
 log = logging.getLogger("kocker")
+log.setLevel("DEBUG")
+formatter = logging.Formatter("%(levelname)s:\t%(message)s")
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+log.addHandler(handler)
 
 
 class KockerEngine(ArgparseEngine):

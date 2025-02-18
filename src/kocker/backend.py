@@ -12,11 +12,6 @@ from kubernetes.client.rest import ApiException
 from kubernetes.stream import stream
 
 log = logging.getLogger("kocker")
-log.setLevel("DEBUG")
-formatter = logging.Formatter("%(levelname)s:\t%(message)s")
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-log.addHandler(handler)
 
 
 @dataclass(frozen=True)
