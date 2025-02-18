@@ -21,14 +21,23 @@ class RunOptions:
     volumes: list[str] = field(default_factory=lambda: [])
 
     def __hash__(self):
-        _hash = hash(
-            (
-                self.image,
-                tuple(self.command),  # Make hashable
-                tuple(self.volumes),
-                time.time(),  # Add timestamp
-            )
+        hash_candidates = (
+            self.image,
+            self.command,
+            self.volumes,
+            time.time(),  # Add timestamp
         )
+
+        to_hash = []
+        for item in hash_candidates:
+            if not item:  # Skip unhashable falsy items
+                pass
+            elif type(item) is list:  # Make hashable
+                to_hash.append(tuple(item))
+            else:
+                to_hash.append(item)
+
+        _hash = hash(tuple(to_hash))
         _hash += sys.maxsize + 1  # Ensure always positive
         return _hash
 
