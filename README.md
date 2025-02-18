@@ -18,15 +18,21 @@ Releases        | <https://github.com/marcelldls/kodman/releases>
 
 ## Some examples:
 
-Handling exit codes
+Hello-world:
 ```
-kodman run --entrypoint bash --rm ubuntu -c "exit 1" && echo "You shall not pass"
+kodman run --rm hello-world
 ```
 
-Add files or directories into the pod filesystem
+Handling exit codes:
 ```
-echo "Mellon" > token.txt
-kodman run -v ./token.txt:/token.txt --rm ubuntu bash -c "cat token.txt"
+kodman run --entrypoint bash --rm ubuntu -c "echo Enter; exit 1" && echo "You shall not pass"
+```
+
+Add files or directories into the pod filesystem:
+```
+mkdir demo
+echo "Mellon" > demo/token.txt
+kodman run -v ./demo:/demo --rm ubuntu bash -c "cat demo/token.txt"
 ```
 
 # Design decisions

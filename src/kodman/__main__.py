@@ -57,24 +57,24 @@ class Run(Command):
         ctx.connect()
         log.debug(f"Image: {args.image}")
         pod_name = ""
-        exec_command = ""
+        exec_command = []
         exec_args = []
         if args.entrypoint:
-            exec_command = args.entrypoint
+            exec_command = [args.entrypoint]
             if args.command:
                 exec_args.append(args.command)
         elif args.command:
-            exec_command = args.command
+            exec_command = [args.command]
         if args.args:
             exec_args += args.args
 
         log.debug(f"Command: {exec_command}")
         log.debug(f"Args: {exec_args}")
-        exec = [exec_command] + exec_args
 
         options = RunOptions(
             image=args.image,
-            command=exec,
+            command=exec_command,
+            args=exec_args,
             volumes=args.volume,
         )
 
