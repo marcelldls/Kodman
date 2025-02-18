@@ -1,16 +1,16 @@
 import argparse
 import logging
+import os
 
 from . import __version__
 from .backend import Backend, DeleteOptions, RunOptions
 from .engine import ArgparseEngine, Command
+from .logging import init_logger
 
 log = logging.getLogger("kodman")
-log.setLevel("DEBUG")
-formatter = logging.Formatter("%(levelname)s:\t%(message)s")
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
-log.addHandler(handler)
+init_logger(log)
+if os.getenv("KODMAN_DEBUG") == "true":
+    log.setLevel("DEBUG")
 
 
 class kodmanEngine(ArgparseEngine):
