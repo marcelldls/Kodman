@@ -18,6 +18,21 @@
                 // Enable break on exception when debugging tests (see: tests/conftest.py)
                 "PYTEST_RAISE": "1",
             },
+        },
+        {
+            "name": "Debug Run",
+            "type": "debugpy",
+            "request": "launch",
+            "justMyCode": false,
+            "module": "kodman",
+            "purpose": [
+                "debug-test"
+            ],
+            "console": "integratedTerminal",
+            "args": [
+                "run",
+                "ss",
+            ],
         }
     ]
 }

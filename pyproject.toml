@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "kocker"
+name = "kodman"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: Apache Software License",
@@ -35,10 +35,10 @@ dev = [
 ]
 
 [project.scripts]
-kocker = "kocker.__main__:cli"
+kodman = "kodman.__main__:cli"
 
 [project.urls]
-GitHub = "https://github.com/marcelldls/kocker"
+GitHub = "https://github.com/marcelldls/kodman"
 
 [[project.authors]] # Further authors may be added by duplicating this section
 email = "marcell.nagy@diamond.ac.uk"
@@ -46,7 +46,7 @@ name = "Marcell Nagy"
 
 
 [tool.setuptools_scm]
-version_file = "src/kocker/_version.py"
+version_file = "src/kodman/_version.py"
 
 [tool.pyright]
 typeCheckingMode = "standard"
@@ -63,7 +63,7 @@ filterwarnings = "error"
 testpaths = "docs src tests"
 
 [tool.coverage.run]
-data_file = "/tmp/kocker.coverage"
+data_file = "/tmp/kodman.coverage"
 
 [tool.coverage.paths]
 # Tests are run from installed location, map back to the src directory
@@ -87,7 +87,7 @@ allowlist_externals =
 commands =
     pre-commit: pre-commit run --all-files --show-diff-on-failure {posargs}
     type-checking: pyright src tests {posargs}
-    tests: pytest --cov=kocker --cov-report term --cov-report xml:cov.xml {posargs}
+    tests: pytest --cov=kodman --cov-report term --cov-report xml:cov.xml {posargs}
 """
 
 [tool.ruff]

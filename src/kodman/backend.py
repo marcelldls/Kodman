@@ -11,7 +11,7 @@ from kubernetes.client.models.v1_pod import V1Pod
 from kubernetes.client.rest import ApiException
 from kubernetes.stream import stream
 
-log = logging.getLogger("kocker")
+log = logging.getLogger("kodman")
 
 
 @dataclass(frozen=True)
@@ -115,7 +115,7 @@ class Backend:
         log.debug(f"  User: {self._context['user']}")
 
     def run(self, options: RunOptions) -> str:
-        unique_pod_name = f"kocker-run-{hash(options)}"
+        unique_pod_name = f"kodman-run-{hash(options)}"
         pod_manifest = {
             "apiVersion": "v1",
             "kind": "Pod",

@@ -5,7 +5,7 @@ from . import __version__
 from .backend import Backend, DeleteOptions, RunOptions
 from .engine import ArgparseEngine, Command
 
-log = logging.getLogger("kocker")
+log = logging.getLogger("kodman")
 log.setLevel("DEBUG")
 formatter = logging.Formatter("%(levelname)s:\t%(message)s")
 handler = logging.StreamHandler()
@@ -13,7 +13,7 @@ handler.setFormatter(formatter)
 log.addHandler(handler)
 
 
-class KockerEngine(ArgparseEngine):
+class kodmanEngine(ArgparseEngine):
     def __init__(self):
         super().__init__()
         self._parser.add_argument(
@@ -25,7 +25,7 @@ class KockerEngine(ArgparseEngine):
         self._ctx = Backend()
 
 
-engine = KockerEngine()
+engine = kodmanEngine()
 
 
 @engine.add_command
@@ -86,7 +86,7 @@ class Run(Command):
 @engine.add_command
 class Version(Command):
     def add(self, parser):
-        parser.add_parser("version", help="Display the Kocker version information")
+        parser.add_parser("version", help="Display the kodman version information")
 
     def do(self, args, ctx):
         print(__version__)
