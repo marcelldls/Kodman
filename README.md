@@ -18,11 +18,6 @@ Releases        | <https://github.com/marcelldls/kodman/releases>
 
 ## Some examples:
 
-Hello World:
-```
-kodman run hello-world
-```
-
 Handling exit codes
 ```
 kodman run --entrypoint bash --rm ubuntu -c "exit 1" && echo "You shall not pass"
