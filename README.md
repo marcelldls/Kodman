@@ -5,19 +5,33 @@
 
 # Kodman
 
-A command-line tool that provides a Docker-like interface for Kubernetes operations.
+A command-line tool that provides a Docker-like experience with a Kubernetes backend.
 
 An example usecase would be to facilitate a single CI script where the runner could be
-a host with Docker (for example the local machine) or Kubernetes runner (In a CI job).
+a host with Docker (for example the local machine, or a Github runner) or a Kubernetes
+runner (use with on-prem Gitlab for example).
 
 Source          | <https://github.com/marcelldls/kodman>
 :---:           | :---:
 PyPI            | `pip install kodman`
 Releases        | <https://github.com/marcelldls/kodman/releases>
 
-Some examples:
+## Some examples:
+
+Hello World:
 ```
-kodman --version
+kodman run hello-world
+```
+
+Handling exit codes
+```
+kodman run --entrypoint bash --rm ubuntu -c "exit 1" && echo "You shall not pass"
+```
+
+Add files or directories into the pod filesystem
+```
+echo "Mellon" > token.txt
+kodman run -v ./token.txt:/token.txt --rm ubuntu bash -c "cat token.txt"
 ```
 
 # Design decisions
