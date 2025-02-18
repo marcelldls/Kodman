@@ -106,6 +106,7 @@ class Backend:
             config.load_incluster_config()
             log.debug("Loaded in-cluster config successfully")
 
+        self.return_code = 0
         self._client = client.CoreV1Api()
         self._context = config.list_kube_config_contexts()[1]["context"]
         log.debug("The current context is:")
@@ -198,6 +199,7 @@ class Backend:
                 print(exec_resp.read_stderr().rstrip())
         log.debug("Execution complete")
         exec_resp.close()
+        self.return_code = exec_resp.returncode
 
         return unique_pod_name
 

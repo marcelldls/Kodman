@@ -55,6 +55,7 @@ class Run(Command):
 
     def do(self, args, ctx):
         log.debug(f"Image: {args.image}")
+        pod_name = ""
         exec_command = ""
         exec_args = []
         if args.entrypoint:
@@ -77,6 +78,7 @@ class Run(Command):
         )
 
         pod_name = ctx.run(options)
+        self.exit_code = ctx.return_code
         if args.rm:
             ctx.delete(DeleteOptions(pod_name))
 

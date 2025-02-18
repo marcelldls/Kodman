@@ -1,8 +1,11 @@
 import argparse
+import sys
 from abc import ABC, abstractmethod
 
 
 class Command(ABC):
+    exit_code = 0
+
     @abstractmethod
     def do(self, args, ctx):
         pass
@@ -32,3 +35,4 @@ class ArgparseEngine:
         for command in self._commands:
             if args.cli_command == command.__class__.__name__.lower():
                 command.do(args, self._ctx)
+                sys.exit(command.exit_code)
