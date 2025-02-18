@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/kodman.svg)](https://pypi.org/project/kodman)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-# kodman
+# Kodman
 
 A command-line tool that provides a Docker-like interface for Kubernetes operations.
 

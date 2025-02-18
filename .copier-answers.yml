@@ -5,12 +5,12 @@ author_email: marcell.nagy@diamond.ac.uk
 author_name: Marcell Nagy
 description: A command-line tool that provides a Docker-like interface for Kubernetes
     operations
-distribution_name: kocker
+distribution_name: kodman
 docker: false
 docs_type: README
 git_platform: github.com
 github_org: marcelldls
-package_name: kocker
+package_name: kodman
 pypi: true
-repo_name: kocker
+repo_name: kodman
 type_checker: pyright

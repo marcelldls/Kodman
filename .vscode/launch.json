@@ -31,8 +31,8 @@
             "console": "integratedTerminal",
             "args": [
                 "run",
-                "ss",
-            ],
+                "hello-world",
+            ]
         }
     ]
 }
