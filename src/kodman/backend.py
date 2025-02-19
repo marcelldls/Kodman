@@ -5,6 +5,7 @@ import tarfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from kubernetes import client, config, watch
 from kubernetes.client.models.v1_pod import V1Pod
@@ -99,9 +100,12 @@ def cp_k8s(
 class Backend:
     def __init__(self):
         self.return_code = 0
+        self._polling_freq = 1
+        self._grace_period = 2  # Is this too aggressive?
 
     def connect(self):
-        # Load config for user/serviceaccount https://github.com/kubernetes-client/python/issues/1005
+        # Load config for user/serviceaccount
+        # https://github.com/kubernetes-client/python/issues/1005
         try:
             log.debug(
                 "Loading kube config for user interaction from outside of cluster"
@@ -123,7 +127,8 @@ class Backend:
     def run(self, options: RunOptions) -> str:
         unique_pod_name = f"kodman-run-{hash(options)}"
         init_container_name = "wait-for-signal"
-        pod_manifest = {
+        namespace = self._context["namespace"]
+        pod_manifest: dict[str, Any] = {
             "apiVersion": "v1",
             "kind": "Pod",
             "metadata": {
@@ -164,17 +169,19 @@ class Backend:
         if options.args:
             pod_manifest["spec"]["containers"][0]["args"] = options.args
 
+        volumes: list[dict[str, Path]] = []
         if options.volumes:
-            for i, volume in enumerate(options.volumes):
-                process = volume.split(":")
+            for i, options_volume in enumerate(options.volumes):
+                process = options_volume.split(":")
                 src = Path(process[0]).resolve()
-                dst = src
+                dst = src  # If no dst, set same as src
                 try:
                     dst = Path(process[1])
                 except IndexError:
                     pass
                 if not dst.is_absolute():
                     raise ValueError("Destination path must be absolute")
+                volumes.append({"src": src, "dst": dst})  # cache for later
                 log.debug(f"Mount: {src} to {dst}")
 
                 pod_manifest["spec"]["initContainers"][0]["volumeMounts"].append(
@@ -190,14 +197,12 @@ class Backend:
                     }
                 )
 
-        # Schedule pod and block
+        # Schedule pod and block until read
         log.debug(f"Creating pod: {unique_pod_name}")
-        self._client.create_namespaced_pod(
-            body=pod_manifest, namespace=self._context["namespace"]
-        )
+        self._client.create_namespaced_pod(body=pod_manifest, namespace=namespace)
         while True:
             read_resp = self._client.read_namespaced_pod(
-                name=unique_pod_name, namespace=self._context["namespace"]
+                name=unique_pod_name, namespace=namespace
             )
             # Runtime type checking
             if isinstance(read_resp, V1Pod):
@@ -211,27 +216,18 @@ class Backend:
             else:
                 raise TypeError("Unexpected response type")
 
-        # Mount volumes
-        if options.volumes:
-            for volume in options.volumes:
-                process = volume.split(":")
-                src = Path(process[0]).resolve()
-                try:
-                    dst = Path(process[1])
-                except IndexError:
-                    dst = src
-                if not dst.is_absolute():
-                    raise ValueError("Destination path must be absolute")
-                log.debug(f"Transfer {src} to {dst}")
-                cp_k8s(
-                    self._client,
-                    self._context["namespace"],
-                    unique_pod_name,
-                    init_container_name,
-                    src,
-                    dst,
-                )
-                log.debug("Transfer completed")
+        # Fill volumes
+        for volume in volumes:
+            log.debug(f"Transferring {volume['src']} to {volume['dst']}")
+            cp_k8s(
+                self._client,
+                namespace,
+                unique_pod_name,
+                init_container_name,
+                volume["src"],
+                volume["dst"],
+            )
+            log.debug("Transfer completed")
 
         # Start execution
         log.debug("Execution start")
@@ -243,8 +239,8 @@ class Backend:
         _ = stream(
             self._client.connect_get_namespaced_pod_exec,
             unique_pod_name,
-            self._context["namespace"],
-            container="wait-for-signal",
+            namespace,
+            container=init_container_name,
             command=exec_command,
             stderr=True,
             stdin=False,
@@ -254,16 +250,15 @@ class Backend:
 
         while True:
             read_resp = self._client.read_namespaced_pod(
-                name=unique_pod_name, namespace=self._context["namespace"]
+                name=unique_pod_name, namespace=namespace
             )
-            # Runtime type checking
-            if isinstance(read_resp, V1Pod):
+            if isinstance(read_resp, V1Pod):  # Runtime type checking
                 if not read_resp.status:
                     raise ValueError("Empty pod status")
                 elif read_resp.status.phase != "Pending":
                     log.debug(f"Pod status: {read_resp.status.phase}")
                     break
-                time.sleep(1)
+                time.sleep(1 / self._polling_freq)
                 log.debug(f"Pod status: {read_resp.status.phase}")
             else:
                 raise TypeError("Unexpected response type")
@@ -274,47 +269,60 @@ class Backend:
         for e in w.stream(
             self._client.read_namespaced_pod_log,
             name=unique_pod_name,
-            namespace=self._context["namespace"],
+            namespace=namespace,
             follow=True,
         ):
             print(e)
             poll_pod = self._client.read_namespaced_pod(
                 name=unique_pod_name,
-                namespace=self._context["namespace"],
+                namespace=namespace,
             )
-            if poll_pod.status.phase in ["Succeeded", "Failed"]:
-                log.debug(f"Pod status: {poll_pod.status.phase}")
-                w.stop()
+            # Runtime type checking
+            if isinstance(poll_pod, V1Pod):
+                if not poll_pod.status:
+                    raise ValueError("Empty pod status")
+                elif poll_pod.status.phase in ["Succeeded", "Failed"]:
+                    log.debug(f"Pod status: {poll_pod.status.phase}")
+                    w.stop()
+            else:
+                raise TypeError("Unexpected response type")
         log.debug("Execution complete")
 
+        # Check exit codes
         final_pod = self._client.read_namespaced_pod(
             name=unique_pod_name,
-            namespace=self._context["namespace"],
+            namespace=namespace,
         )
-        container_status = final_pod.status.container_statuses[0]
-        self.return_code = container_status.state.terminated.exit_code
+        if isinstance(final_pod, V1Pod):  # Runtime type checking
+            if not final_pod.status:
+                raise ValueError("Empty pod status")
+            container_status = final_pod.status.container_statuses[0]
+            self.return_code = container_status.state.terminated.exit_code
+        else:
+            raise TypeError("Unexpected response type")
 
         return unique_pod_name
 
     def delete(self, options: DeleteOptions):
+        namespace = self._context["namespace"]
         try:
             exists_resp = self._client.read_namespaced_pod(
                 name=options.name,
-                namespace=self._context["namespace"],
+                namespace=namespace,
             )
             self._client.delete_namespaced_pod(
                 name=options.name,
-                namespace=self._context["namespace"],
-                grace_period_seconds=2,  # Is this too aggressive?
+                namespace=namespace,
+                grace_period_seconds=self._grace_period,
             )
             log.debug("Awaiting pod cleanup...")
             while exists_resp:
                 try:
                     exists_resp = self._client.read_namespaced_pod(
                         name=options.name,
-                        namespace=self._context["namespace"],
+                        namespace=namespace,
                     )
-                    time.sleep(2)
+                    time.sleep(1 / self._polling_freq)
                 except ApiException as e:
                     if e.status == 404:
                         log.debug(f"Pod {options.name} deleted successfully")

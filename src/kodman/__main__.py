@@ -35,11 +35,11 @@ class Run(Command):
         parser_run.add_argument(
             "--entrypoint",
             type=str,
-            help=" Overwrite the default ENTRYPOINT of the image",
+            help="Overwrite the default ENTRYPOINT of the image",
         )
         parser_run.add_argument(
             "--rm",
-            help="Remove container and any anonymous unnamed volume associated with the container after exit",
+            help="Remove the container after exit",
             action="store_true",
         )
         parser_run.add_argument(
