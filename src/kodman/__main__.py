@@ -5,7 +5,7 @@ import os
 from . import __version__
 from .backend import Backend, DeleteOptions, RunOptions
 from .engine import ArgparseEngine, Command
-from .logging import init_logger
+from .logger import init_logger
 
 log = logging.getLogger("kodman")
 init_logger(log)
