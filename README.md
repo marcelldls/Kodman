@@ -35,11 +35,18 @@ echo "Mellon" > demo/token.txt
 kodman run -v ./demo:/demo --rm ubuntu bash -c "cat demo/token.txt"
 ```
 
+## Usage:
+
+`kodman` will use your current Kubernetes context (the same as your current `kubectl` context)
+
 # Design decisions
 
 ## Why argparse over click/typer?
-The docker api is not POSIX compliant.
+
+The docker cli api is not POSIX compliant.
+
 For example: `docker run --network=host imageID dnf -y install java`
-Click/Typer does not allow this (and is correct).
-They would expect: `docker run --network=host imageID -- dnf -y install java`
+
+Click/Typer does not allow this (and is correct). They would expect: `docker run --network=host imageID -- dnf -y install java`
+
 See Section 12.2 Guideline 10 https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_02
