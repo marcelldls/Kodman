@@ -264,6 +264,7 @@ class Backend:
                 raise TypeError("Unexpected response type")
 
         # Attach to pod logging
+        stream_error = False
         log.debug("Try attach to pod logs")
         w = watch.Watch()
         for e in w.stream(
@@ -284,8 +285,12 @@ class Backend:
                 elif poll_pod.status.phase in ["Succeeded", "Failed"]:
                     log.debug(f"Pod status: {poll_pod.status.phase}")
                     w.stop()
+                    break
             else:
                 raise TypeError("Unexpected response type")
+        else:
+            log.debug("Attach failed")
+            stream_error = False
         log.debug("Execution complete")
 
         # Check exit codes
@@ -297,7 +302,14 @@ class Backend:
             if not final_pod.status:
                 raise ValueError("Empty pod status")
             container_status = final_pod.status.container_statuses[0]
-            self.return_code = container_status.state.terminated.exit_code
+            if not stream_error:
+                self.return_code = container_status.state.terminated.exit_code
+            else:
+                self.return_code = 1
+                reason = container_status.state.waiting.reason
+                message = container_status.state.waiting.message
+                log.debug(f"{reason}:{message}")
+                print(message)
         else:
             raise TypeError("Unexpected response type")
 
