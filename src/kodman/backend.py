@@ -264,7 +264,6 @@ class Backend:
                 raise TypeError("Unexpected response type")
 
         # Attach to pod logging
-        stream_error = False
         log.debug("Try attach to pod logs")
         w = watch.Watch()
         for e in w.stream(
@@ -274,23 +273,6 @@ class Backend:
             follow=True,
         ):
             print(e)
-            poll_pod = self._client.read_namespaced_pod(
-                name=unique_pod_name,
-                namespace=namespace,
-            )
-            # Runtime type checking
-            if isinstance(poll_pod, V1Pod):
-                if not poll_pod.status:
-                    raise ValueError("Empty pod status")
-                elif poll_pod.status.phase in ["Succeeded", "Failed"]:
-                    log.debug(f"Pod status: {poll_pod.status.phase}")
-                    w.stop()
-                    break
-            else:
-                raise TypeError("Unexpected response type")
-        else:
-            log.debug("Attach failed")
-            stream_error = False
         log.debug("Execution complete")
 
         # Check exit codes
@@ -302,9 +284,9 @@ class Backend:
             if not final_pod.status:
                 raise ValueError("Empty pod status")
             container_status = final_pod.status.container_statuses[0]
-            if not stream_error:
+            try:
                 self.return_code = container_status.state.terminated.exit_code
-            else:
+            except AttributeError:
                 self.return_code = 1
                 reason = container_status.state.waiting.reason
                 message = container_status.state.waiting.message
