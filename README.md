@@ -7,9 +7,7 @@
 
 A command-line tool that provides a Docker-like experience with a Kubernetes backend.
 
-An example usecase would be to facilitate a single CI script where the runner could be
-a host with Docker (for example the local machine, or a Github runner) or a Kubernetes
-runner (use with on-prem Gitlab for example).
+An example use case would be to facilitate a single CI script where the runner may sometimes be a host with Docker (possibly run locally) and other times a Kubernetes executor where Docker-in-Docker is not possible (such as a Gitlab runner).
 
 Source          | <https://github.com/marcelldls/kodman>
 :---:           | :---:
