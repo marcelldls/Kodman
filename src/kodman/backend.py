@@ -274,6 +274,7 @@ class Backend:
         ):
             print(e)
         log.debug("Execution complete")
+        w.stop()
 
         # Check exit codes
         final_pod = self._client.read_namespaced_pod(
@@ -284,16 +285,26 @@ class Backend:
             if not final_pod.status:
                 raise ValueError("Empty pod status")
             container_status = final_pod.status.container_statuses[0]
-            try:
-                self.return_code = container_status.state.terminated.exit_code
-            except AttributeError:
-                self.return_code = 1
-                reason = container_status.state.waiting.reason
-                message = container_status.state.waiting.message
-                log.debug(f"{reason}:{message}")
-                print(message)
-        else:
-            raise TypeError("Unexpected response type")
+            while not container_status.state.terminated:
+
+                # Exit early if container didnt even start
+                if not container_status.started:
+                    log.debug(f"Container failed to start")
+                    self.return_code = 1
+                    reason = container_status.state.waiting.reason
+                    message = container_status.state.waiting.message
+                    log.debug(f"{reason}: {message}")
+                    print(message)
+                    return unique_pod_name
+
+                log.debug(f"Awaiting pod termination...")
+                time.sleep(1 / self._polling_freq)
+                final_pod = self._client.read_namespaced_pod(
+                    name=unique_pod_name,
+                    namespace=namespace,
+                )
+                container_status = final_pod.status.container_statuses[0]
+            self.return_code = container_status.state.terminated.exit_code
 
         return unique_pod_name
 
