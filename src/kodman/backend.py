@@ -96,6 +96,14 @@ def cp_k8s(
             break
     resp.close()
 
+def get_incluster_context():
+    ns_path = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+    context = {}
+    with open(ns_path) as f:
+        context["namespace"] = f.read().strip()
+    context["cluster"] = "default"
+    context["user"] = "default"
+    return context
 
 class Backend:
     def __init__(self):
@@ -112,13 +120,15 @@ class Backend:
             )
             config.load_kube_config()
             log.debug("Loaded kube config successfully")
+            self._context = config.list_kube_config_contexts()[1]["context"]
+            print(self._context)
         except config.config_exception.ConfigException:
             log.debug("Failed to load kube config, trying in-cluster config")
             config.load_incluster_config()
             log.debug("Loaded in-cluster config successfully")
+            self._context = get_incluster_context()
 
         self._client = client.CoreV1Api()
-        self._context = config.list_kube_config_contexts()[1]["context"]
         log.debug("The current context is:")
         log.debug(f"  Cluster: {self._context['cluster']}")
         log.debug(f"  Namespace: {self._context['namespace']}")
