@@ -13,8 +13,7 @@ classifiers = [
 ]
 description = "A command-line tool that provides a Docker-like interface for Kubernetes operations"
 dependencies = [
-    "typer",
-    "kubernetes@git+https://github.com/kubernetes-client/python#master",
+    "kubernetes==32.0.0",
 ] # Add project dependencies here, e.g. ["click", "numpy"]
 dynamic = ["version"]
 license.file = "LICENSE"
