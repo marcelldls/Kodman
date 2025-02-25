@@ -96,6 +96,7 @@ def cp_k8s(
             break
     resp.close()
 
+
 def get_incluster_context():
     ns_path = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
     context = {}
@@ -104,6 +105,7 @@ def get_incluster_context():
     context["cluster"] = "default"
     context["user"] = "default"
     return context
+
 
 class Backend:
     def __init__(self):
@@ -295,10 +297,9 @@ class Backend:
                 raise ValueError("Empty pod status")
             container_status = final_pod.status.container_statuses[0]
             while not container_status.state.terminated:
-
                 # Exit early if container didnt even start
                 if not container_status.started:
-                    log.debug(f"Container failed to start")
+                    log.debug("Container failed to start")
                     self.return_code = 1
                     reason = container_status.state.waiting.reason
                     message = container_status.state.waiting.message
@@ -306,13 +307,13 @@ class Backend:
                     print(message)
                     return unique_pod_name
 
-                log.debug(f"Awaiting pod termination...")
+                log.debug("Awaiting pod termination...")
                 time.sleep(1 / self._polling_freq)
                 final_pod = self._client.read_namespaced_pod(
                     name=unique_pod_name,
                     namespace=namespace,
                 )
-                container_status = final_pod.status.container_statuses[0]
+                container_status = final_pod.status.container_statuses[0]  # type: ignore
             self.return_code = container_status.state.terminated.exit_code
 
         return unique_pod_name
