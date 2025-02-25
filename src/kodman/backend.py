@@ -121,7 +121,6 @@ class Backend:
             config.load_kube_config()
             log.debug("Loaded kube config successfully")
             self._context = config.list_kube_config_contexts()[1]["context"]
-            print(self._context)
         except config.config_exception.ConfigException:
             log.debug("Failed to load kube config, trying in-cluster config")
             config.load_incluster_config()
