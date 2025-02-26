@@ -227,7 +227,7 @@ class Backend:
             else:
                 raise TypeError("Unexpected response type")
 
-            log.debug(f"Awaiting init container...")
+            log.debug("Awaiting init container...")
             time.sleep(1 / self._polling_freq)
 
         # Fill volumes
