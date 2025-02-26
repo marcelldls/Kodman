@@ -308,7 +308,7 @@ class Backend:
                     reason = container_status.state.waiting.reason
                     message = container_status.state.waiting.message
                     log.debug(f"{reason}: {message}")
-                    print(message)
+                    print(message, file=sys.stderr)
                     return unique_pod_name
 
                 log.debug("Awaiting pod termination...")

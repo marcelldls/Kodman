@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -19,3 +20,11 @@ if os.getenv("PYTEST_RAISE", "0") == "1":
     @pytest.hookimpl(tryfirst=True)
     def pytest_internalerror(excinfo: pytest.ExceptionInfo[Any]):
         raise excinfo.value
+
+
+DATA_PATH = Path(__file__).parent / "data"
+
+
+@pytest.fixture
+def data() -> Path:
+    return DATA_PATH
