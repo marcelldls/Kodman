@@ -7,7 +7,7 @@ import pytest
 from data import responses
 
 ENTRY_POINT = "kodman"
-DOCKER_PROVIDER = os.getenv("KODMAN_SYSTEM_TESTING", "podman")
+DOCKER_PROVIDER = os.getenv("DOCKER_PROVIDER", "podman")
 KODMAN_SYSTEM_TESTING = os.getenv("KODMAN_SYSTEM_TESTING") == "true"
 
 
