@@ -16,12 +16,20 @@ on:
 env:
   # https://github.com/pytest-dev/pytest/issues/2042
   PY_IGNORE_IMPORTMISMATCH: "1"
+  DOCKER_PROVIDER: "docker"
+  KODMAN_SYSTEM_TESTING: "true"
 
 jobs:
   run:
     runs-on: ${{ inputs.runs-on }}
 
     steps:
+      - name: start minikube
+        id: minikube
+        uses: medyagh/setup-minikube@master
+      - run: docker version
+      - run: docker pull ubuntu
+      - run: kubectl version
       - name: Checkout
         uses: actions/checkout@v4
         with:
