@@ -208,7 +208,7 @@ class Backend:
                     }
                 )
 
-        # Schedule pod and block until read
+        # Schedule pod and block until ready
         log.debug(f"Creating pod: {unique_pod_name}")
         self._client.create_namespaced_pod(body=pod_manifest, namespace=namespace)
         while True:
@@ -222,10 +222,13 @@ class Backend:
                 if read_resp.status.init_container_statuses:
                     init_status = read_resp.status.init_container_statuses[0]
                     if init_status.state.running:
-                        log.debug("Init container is running, pod is ready")
+                        log.debug("Init container is running")
                         break
             else:
                 raise TypeError("Unexpected response type")
+
+            log.debug(f"Awaiting init container...")
+            time.sleep(1 / self._polling_freq)
 
         # Fill volumes
         for volume in volumes:
@@ -269,8 +272,9 @@ class Backend:
                 elif read_resp.status.phase != "Pending":
                     log.debug(f"Pod status: {read_resp.status.phase}")
                     break
-                time.sleep(1 / self._polling_freq)
                 log.debug(f"Pod status: {read_resp.status.phase}")
+                time.sleep(1 / self._polling_freq)
+
             else:
                 raise TypeError("Unexpected response type")
 
@@ -330,8 +334,8 @@ class Backend:
                 namespace=namespace,
                 grace_period_seconds=self._grace_period,
             )
-            log.debug("Awaiting pod cleanup...")
             while exists_resp:
+                log.debug("Awaiting pod cleanup...")
                 try:
                     exists_resp = self._client.read_namespaced_pod(
                         name=options.name,
