@@ -9,8 +9,8 @@ distribution_name: kodman
 docker: false
 docs_type: README
 git_platform: github.com
-github_org: marcelldls
+github_org: epics-containers
 package_name: kodman
 pypi: true
-repo_name: kodman
+repo_name: Kodman
 type_checker: pyright
