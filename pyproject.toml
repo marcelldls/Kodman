@@ -37,7 +37,7 @@ dev = [
 kodman = "kodman.__main__:cli"
 
 [project.urls]
-GitHub = "https://github.com/marcelldls/kodman"
+GitHub = "https://github.com/epics-containers/Kodman"
 
 [[project.authors]] # Further authors may be added by duplicating this section
 email = "marcell.nagy@diamond.ac.uk"
