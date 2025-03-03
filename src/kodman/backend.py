@@ -12,8 +12,6 @@ from kubernetes.client.models.v1_pod import V1Pod
 from kubernetes.client.rest import ApiException
 from kubernetes.stream import stream
 
-log = logging.getLogger("kodman")
-
 
 @dataclass(frozen=True)
 class RunOptions:
@@ -57,6 +55,7 @@ def cp_k8s(
     container: str,
     source_path: Path,
     dest_path: Path,
+    log: logging.Logger | None = None,
 ):
     buf = io.BytesIO()
     if not source_path.is_dir() and dest_path.is_dir():
@@ -85,10 +84,11 @@ def cp_k8s(
 
     while resp.is_open():
         resp.update(timeout=1)
-        if resp.peek_stdout():
-            log.debug(f"STDOUT: {resp.read_stdout()}")
-        if resp.peek_stderr():
-            log.debug(f"STDERR: {resp.read_stderr()}")
+        if log:
+            if resp.peek_stdout():
+                log.debug(f"STDOUT: {resp.read_stdout()}")
+            if resp.peek_stderr():
+                log.debug(f"STDERR: {resp.read_stderr()}")
         if commands:
             c = commands.pop(0)
             resp.write_stdin(c)
@@ -108,8 +108,9 @@ def get_incluster_context():
 
 
 class Backend:
-    def __init__(self):
+    def __init__(self, log):
         self.return_code = 0
+        self._log = log
         self._polling_freq = 1
         self._grace_period = 2  # Is this too aggressive?
 
@@ -117,23 +118,23 @@ class Backend:
         # Load config for user/serviceaccount
         # https://github.com/kubernetes-client/python/issues/1005
         try:
-            log.debug(
+            self._log.info(
                 "Loading kube config for user interaction from outside of cluster"
             )
             config.load_kube_config()
-            log.debug("Loaded kube config successfully")
+            self._log.info("Loaded kube config successfully")
             self._context = config.list_kube_config_contexts()[1]["context"]
         except config.config_exception.ConfigException:
-            log.debug("Failed to load kube config, trying in-cluster config")
+            self._log.info("Failed to load kube config, trying in-cluster config")
             config.load_incluster_config()
-            log.debug("Loaded in-cluster config successfully")
+            self._log.info("Loaded in-cluster config successfully")
             self._context = get_incluster_context()
 
         self._client = client.CoreV1Api()
-        log.debug("The current context is:")
-        log.debug(f"  Cluster: {self._context['cluster']}")
-        log.debug(f"  Namespace: {self._context['namespace']}")
-        log.debug(f"  User: {self._context['user']}")
+        self._log.debug("The current context is:")
+        self._log.debug(f"  Cluster: {self._context['cluster']}")
+        self._log.debug(f"  Namespace: {self._context['namespace']}")
+        self._log.debug(f"  User: {self._context['user']}")
 
     def run(self, options: RunOptions) -> str:
         unique_pod_name = f"kodman-run-{hash(options)}"
@@ -193,7 +194,7 @@ class Backend:
                 if not dst.is_absolute():
                     raise ValueError("Destination path must be absolute")
                 volumes.append({"src": src, "dst": dst})  # cache for later
-                log.debug(f"Mount: {src} to {dst}")
+                self._log.info(f"Mount: {src} to {dst}")
 
                 pod_manifest["spec"]["initContainers"][0]["volumeMounts"].append(
                     {"name": f"shared-data-{i}", "mountPath": str(dst)}
@@ -209,7 +210,7 @@ class Backend:
                 )
 
         # Schedule pod and block until ready
-        log.debug(f"Creating pod: {unique_pod_name}")
+        self._log.info(f"Creating pod: {unique_pod_name}")
         self._client.create_namespaced_pod(body=pod_manifest, namespace=namespace)
         while True:
             read_resp = self._client.read_namespaced_pod(
@@ -222,17 +223,17 @@ class Backend:
                 if read_resp.status.init_container_statuses:
                     init_status = read_resp.status.init_container_statuses[0]
                     if init_status.state.running:
-                        log.debug("Init container is running")
+                        self._log.info("Init container is running")
                         break
             else:
                 raise TypeError("Unexpected response type")
 
-            log.debug("Awaiting init container...")
+            self._log.info("Awaiting init container...")
             time.sleep(1 / self._polling_freq)
 
         # Fill volumes
         for volume in volumes:
-            log.debug(f"Transferring {volume['src']} to {volume['dst']}")
+            self._log.info(f"Transferring {volume['src']} to {volume['dst']}")
             cp_k8s(
                 self._client,
                 namespace,
@@ -240,11 +241,12 @@ class Backend:
                 init_container_name,
                 volume["src"],
                 volume["dst"],
+                log=self._log,
             )
-            log.debug("Transfer completed")
+            self._log.info("Transfer completed")
 
         # Start execution
-        log.debug("Execution start")
+        self._log.info("Execution start")
         exec_command = [
             "/bin/sh",
             "-c",
@@ -270,16 +272,16 @@ class Backend:
                 if not read_resp.status:
                     raise ValueError("Empty pod status")
                 elif read_resp.status.phase != "Pending":
-                    log.debug(f"Pod status: {read_resp.status.phase}")
+                    self._log.info(f"Pod status: {read_resp.status.phase}")
                     break
-                log.debug(f"Pod status: {read_resp.status.phase}")
+                self._log.info(f"Pod status: {read_resp.status.phase}")
                 time.sleep(1 / self._polling_freq)
 
             else:
                 raise TypeError("Unexpected response type")
 
         # Attach to pod logging
-        log.debug("Try attach to pod logs")
+        self._log.info("Try attach to pod logs")
         w = watch.Watch()
         for e in w.stream(
             self._client.read_namespaced_pod_log,
@@ -288,7 +290,7 @@ class Backend:
             follow=True,
         ):
             print(e)
-        log.debug("Execution complete")
+        self._log.info("Execution complete")
         w.stop()
 
         # Check exit codes
@@ -303,15 +305,15 @@ class Backend:
             while not container_status.state.terminated:
                 # Exit early if container didnt even start
                 if not container_status.started:
-                    log.debug("Container failed to start")
+                    self._log.info("Container failed to start")
                     self.return_code = 1
                     reason = container_status.state.waiting.reason
                     message = container_status.state.waiting.message
-                    log.debug(f"{reason}: {message}")
+                    self._log.debug(f"{reason}: {message}")
                     print(message, file=sys.stderr)
                     return unique_pod_name
 
-                log.debug("Awaiting pod termination...")
+                self._log.info("Awaiting pod termination...")
                 time.sleep(1 / self._polling_freq)
                 final_pod = self._client.read_namespaced_pod(
                     name=unique_pod_name,
@@ -335,7 +337,7 @@ class Backend:
                 grace_period_seconds=self._grace_period,
             )
             while exists_resp:
-                log.debug("Awaiting pod cleanup...")
+                self._log.info("Awaiting pod cleanup...")
                 try:
                     exists_resp = self._client.read_namespaced_pod(
                         name=options.name,
@@ -344,10 +346,10 @@ class Backend:
                     time.sleep(1 / self._polling_freq)
                 except ApiException as e:
                     if e.status == 404:
-                        log.debug(f"Pod {options.name} deleted successfully")
+                        self._log.info(f"Pod {options.name} deleted successfully")
                         break
                     else:
                         raise e
 
         except ApiException as e:
-            log.debug(f"Error deleting pod: {e}")
+            self._log.info(f"Error deleting pod: {e}")

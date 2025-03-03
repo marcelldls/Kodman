@@ -1,28 +1,22 @@
 import argparse
-import logging
 import os
 
 from . import __version__
 from .backend import Backend, DeleteOptions, RunOptions
 from .engine import ArgparseEngine, Command
-from .logger import init_logger
-
-log = logging.getLogger("kodman")
-init_logger(log)
-if os.getenv("KODMAN_DEBUG") == "true":
-    log.setLevel("DEBUG")
 
 
 class kodmanEngine(ArgparseEngine):
     def __init__(self):
-        super().__init__()
+        debug = os.getenv("KODMAN_DEBUG") == "true"
+        super().__init__(debug=debug)
         self._parser.add_argument(
             "-v",
             "--version",
             action="version",
             version=__version__,
         )
-        self._ctx = Backend()
+        self._ctx = Backend(self._log)
 
 
 engine = kodmanEngine()
@@ -53,7 +47,7 @@ class Run(Command):
         parser_run.add_argument("command", nargs="?")
         parser_run.add_argument("args", nargs=argparse.REMAINDER, default=[])
 
-    def do(self, args, ctx):
+    def do(self, args, ctx, log):
         ctx.connect()
         log.debug(f"Image: {args.image}")
         pod_name = ""
@@ -87,7 +81,7 @@ class Version(Command):
     def add(self, parser):
         parser.add_parser("version", help="Display the kodman version information")
 
-    def do(self, args, ctx):
+    def do(self, args, ctx, log):
         print(__version__)
 
 
