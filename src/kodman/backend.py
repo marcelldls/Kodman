@@ -276,7 +276,16 @@ class Backend:
                     break
                 self._log.info(f"Pod status: {read_resp.status.phase}")
                 time.sleep(1 / self._polling_freq)
-
+                events = self._client.list_namespaced_event(namespace=namespace)
+                for event in events.items:
+                    if event.involved_object.name == unique_pod_name:
+                        if event.type == "Warning":
+                            self.return_code = 1
+                            reason = event.type
+                            message = event.message
+                            self._log.debug(f"{reason}: {message}")
+                            print(message, file=sys.stderr)
+                            return unique_pod_name
             else:
                 raise TypeError("Unexpected response type")
 

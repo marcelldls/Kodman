@@ -33,3 +33,9 @@ For more examples and ideas, visit:
  https://docs.docker.com/get-started/"""
 
 mount = "test data"
+
+failed_command = (
+    "Error: failed to create containerd task: failed to create shim task: "
+    "OCI runtime create failed: runc create failed: unable to start container "
+    'process: exec: "bash": executable file not found in $PATH: unknown'
+)

@@ -120,3 +120,36 @@ def test_kodman_run_mount(data: Path):
     ]
 
     assert subprocess.check_output(cmd).decode().strip() == responses.mount
+
+
+@pytest.mark.skipif(
+    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
+)
+def test_kodman_fail_image(data: Path):
+    cmd = [
+        ENTRY_POINT,
+        "run",
+        "--rm",
+        "hello-worl",
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 1
+
+
+@pytest.mark.skipif(
+    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
+)
+def test_kodman_fail_command(data: Path):
+    cmd = [
+        ENTRY_POINT,
+        "run",
+        "--rm",
+        "--entrypoint",
+        "bash",
+        "hello-world",
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 1
+    assert result.stderr.strip() == responses.failed_command
