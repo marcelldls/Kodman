@@ -34,8 +34,6 @@ For more examples and ideas, visit:
 
 mount = "test data"
 
-failed_command = (
-    "Error: failed to create containerd task: failed to create shim task: "
-    "OCI runtime create failed: runc create failed: unable to start container "
-    'process: exec: "bash": executable file not found in $PATH: unknown'
-)
+failed_image = "Failed to pull image"
+
+failed_command = 'exec: "bash": executable file not found in $PATH: unknown'

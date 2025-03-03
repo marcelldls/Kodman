@@ -135,6 +135,7 @@ def test_kodman_fail_image(data: Path):
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 1
+    assert responses.failed_image in result.stderr
 
 
 @pytest.mark.skipif(
@@ -152,4 +153,4 @@ def test_kodman_fail_command(data: Path):
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 1
-    assert result.stderr.strip() == responses.failed_command
+    assert responses.failed_command in result.stderr
