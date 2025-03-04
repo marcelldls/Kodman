@@ -33,3 +33,7 @@ For more examples and ideas, visit:
  https://docs.docker.com/get-started/"""
 
 mount = "test data"
+
+failed_image = "Failed to pull image"
+
+failed_command = 'exec: "bash": executable file not found in $PATH: unknown'
