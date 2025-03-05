@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -12,9 +13,6 @@ DOCKER_PROVIDER = os.getenv("DOCKER_PROVIDER", "podman")
 KODMAN_SYSTEM_TESTING = os.getenv("KODMAN_SYSTEM_TESTING") == "true"
 
 
-@pytest.mark.skipif(
-    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
-)
 def remove_empty_lines(text):
     """Remove after solving https://github.com/epics-containers/Kodman/issues/9"""
     lines = [line for line in text.split("\n") if line.strip()]
@@ -34,6 +32,28 @@ def test_docker_run_hello():
 )
 def test_kodman_run_hello():
     cmd = [ENTRY_POINT, "run", "--rm", "hello-world"]
+    assert subprocess.check_output(cmd).decode().strip() == remove_empty_lines(
+        responses.hello_world
+    )
+
+
+@pytest.mark.skipif(
+    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
+)
+def test_kodman_run_incluster(root: Path):
+    pod_command = "pip install /kodman > /dev/null 2>&1 && kodman run --rm hello-world"
+    cmd = [
+        ENTRY_POINT,
+        "run",
+        "--rm",
+        "--entrypoint",
+        "bash",
+        "-v",
+        f"{root}:/kodman",
+        f"python:{sys.version_info.major}.{sys.version_info.minor}",
+        "-c",
+        pod_command,
+    ]
     assert subprocess.check_output(cmd).decode().strip() == remove_empty_lines(
         responses.hello_world
     )
