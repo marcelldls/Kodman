@@ -55,20 +55,23 @@ def cp_k8s(
     container: str,
     source_path: Path,
     dest_path: Path,
-    log: logging.Logger | None = None,
+    log: logging.Logger,
 ):
+    log.info(f"Transferring {source_path} to {dest_path}")
     buf = io.BytesIO()
     if not source_path.is_dir() and dest_path.is_dir():
         arcname = dest_path.joinpath(source_path.name)
     else:
         arcname = dest_path
 
-    with tarfile.open(fileobj=buf, mode="w:tar") as tar:
+    log.debug(f"Compressing {source_path}")
+    with tarfile.open(fileobj=buf, mode="w:tar") as tar:  # To compress set 'w:gz'
         tar.add(source_path, arcname=arcname)
-    commands = [buf.getvalue()]
+    buf.seek(0)
+    compressed_size = buf.getbuffer().nbytes
+    log.debug(f"Compressed to {compressed_size} bytes")
 
-    # Copying file
-    exec_command = ["tar", "xvf", "-", "-C", "/"]
+    exec_command = ["tar", "xvf", "-", "-C", "/"]  # To decompress set 'xzvf'
     resp = stream(
         kube_conn.connect_get_namespaced_pod_exec,
         pod_name,
@@ -82,19 +85,21 @@ def cp_k8s(
         _preload_content=False,
     )
 
+    chunk_size = 10 * 1024 * 1024
+    steps = -(compressed_size // -chunk_size)  # Ceiling division
+    log.debug(f"Transferring {steps} chunks")
+    counter = 0
     while resp.is_open():
         resp.update(timeout=1)
-        if log:
-            if resp.peek_stdout():
-                log.debug(f"STDOUT: {resp.read_stdout()}")
-            if resp.peek_stderr():
-                log.debug(f"STDERR: {resp.read_stderr()}")
-        if commands:
-            c = commands.pop(0)
-            resp.write_stdin(c)
+        if read := buf.read(chunk_size):
+            resp.write_stdin(read)
         else:
+            log.debug("Empty buffer")
             break
+        log.info(f"Transfer {counter * 100 // steps}% completed")
+        counter += 1
     resp.close()
+    log.info("Transfer done")
 
 
 def get_incluster_context():
@@ -233,7 +238,6 @@ class Backend:
 
         # Fill volumes
         for volume in volumes:
-            self._log.info(f"Transferring {volume['src']} to {volume['dst']}")
             cp_k8s(
                 self._client,
                 namespace,
@@ -243,7 +247,6 @@ class Backend:
                 volume["dst"],
                 log=self._log,
             )
-            self._log.info("Transfer completed")
 
         # Start execution
         self._log.info("Execution start")

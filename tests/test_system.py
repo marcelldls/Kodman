@@ -1,5 +1,6 @@
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -120,6 +121,32 @@ def test_kodman_run_mount(data: Path):
     ]
 
     assert subprocess.check_output(cmd).decode().strip() == responses.mount
+
+
+@pytest.mark.skipif(
+    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
+)
+def test_docker_run_mount_large(data: Path):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        temp_dir = Path(tmpdirname)
+        file_slug = "test.txt"
+        file_name = temp_dir / file_slug
+        with open(file_name, "wb") as out:
+            out.truncate(100 * 1024 * 1024)
+
+        cmd = [
+            ENTRY_POINT,
+            "run",
+            "-v",
+            f"{tmpdirname}:/test",
+            "--rm",
+            "ubuntu",
+            "bash",
+            "-c",
+            f"[ -f test/{file_slug} ] && echo pass",
+        ]
+
+        assert subprocess.check_output(cmd).decode().strip() == "pass"
 
 
 @pytest.mark.skipif(
