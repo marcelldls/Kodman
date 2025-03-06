@@ -35,7 +35,9 @@ kodman run -v ./demo:/demo --rm ubuntu bash -c "cat demo/token.txt"
 
 ## Usage:
 
-`kodman` will use your current Kubernetes context (the same as your current `kubectl` context)
+From outside of the cluster `kodman` will use your current Kubernetes context (the same as your current `kubectl` context).
+
+From inside the cluster `kodman` will use the serviceAccount mounted by default.
 
 ## Permissions
 
