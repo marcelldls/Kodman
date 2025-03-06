@@ -5,5 +5,5 @@ metadata:
   name: pod-creator
 rules:
   - apiGroups: [""]
-    resources: ["pods"]
+    resources: ["pods", "pods/exec"]
     verbs: ["create", "get"]
