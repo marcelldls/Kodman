@@ -37,6 +37,10 @@ kodman run -v ./demo:/demo --rm ubuntu bash -c "cat demo/token.txt"
 
 `kodman` will use your current Kubernetes context (the same as your current `kubectl` context)
 
+## Permissions
+
+A minimal Kubernetes RBAC role definition can be found in `.github/manifests`
+
 # Design decisions
 
 ## Why argparse over click/typer?
