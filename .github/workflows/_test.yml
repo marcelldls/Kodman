@@ -30,6 +30,7 @@ jobs:
       - run: docker version
       - run: docker pull ubuntu
       - run: kubectl version
+      - run: kubectl apply -f .github/manifests
       - run: kubectl auth can-i --as=system:serviceaccount:default:default create pods -n default
       - name: Checkout
         uses: actions/checkout@v4
