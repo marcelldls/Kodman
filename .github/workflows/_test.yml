@@ -33,8 +33,6 @@ jobs:
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@master
-      - run: pwd
-      - run: ls -la
       - run: docker version
       - run: docker pull ubuntu
       - run: kubectl version
