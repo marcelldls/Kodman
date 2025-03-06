@@ -146,7 +146,7 @@ def test_kodman_run_mount(data: Path):
 @pytest.mark.skipif(
     not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
 )
-def test_docker_run_mount_large(data: Path):
+def test_kodman_run_mount_large(data: Path):
     with tempfile.TemporaryDirectory() as tmpdirname:
         temp_dir = Path(tmpdirname)
         file_slug = "test.txt"
