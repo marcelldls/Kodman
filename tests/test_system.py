@@ -49,7 +49,7 @@ def test_kodman_run_incluster(root: Path):
         "--entrypoint",
         "bash",
         "-v",
-        f"{root}:/kodman",
+        f"/home/runner/work/Kodman:/kodman",
         f"python:{sys.version_info.major}.{sys.version_info.minor}",
         "-c",
         pod_command,
