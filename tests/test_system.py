@@ -41,7 +41,7 @@ def test_kodman_run_hello():
     not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
 )
 def test_kodman_run_incluster(root: Path):
-    pod_command = "pip install /kodman && kodman run --rm hello-world"
+    pod_command = "pip install /kodman > /dev/null 2>&1 && kodman run --rm hello-world"
     cmd = [
         ENTRY_POINT,
         "run",
@@ -49,7 +49,7 @@ def test_kodman_run_incluster(root: Path):
         "--entrypoint",
         "bash",
         "-v",
-        f"/home/runner/work/Kodman:/kodman",
+        f"{root}:/kodman",
         f"python:{sys.version_info.major}.{sys.version_info.minor}",
         "-c",
         pod_command,
