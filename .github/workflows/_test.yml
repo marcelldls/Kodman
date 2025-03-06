@@ -28,10 +28,11 @@ jobs:
         id: minikube
         uses: medyagh/setup-minikube@master
       - run: pwd
+      - run: ls -la
       - run: docker version
       - run: docker pull ubuntu
       - run: kubectl version
-      - run: kubectl apply -f Kodman/.github/manifests
+      - run: kubectl apply -f .github/manifests
       - run: kubectl auth can-i --as=system:serviceaccount:default:default create pods -n default
       - name: Checkout
         uses: actions/checkout@v4
