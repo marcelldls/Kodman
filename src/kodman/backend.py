@@ -19,6 +19,7 @@ class RunOptions:
     command: list[str] = field(default_factory=lambda: [])
     args: list[str] = field(default_factory=lambda: [])
     volumes: list[str] = field(default_factory=lambda: [])
+    service_account: str = field(default_factory=lambda: "")
 
     def __hash__(self):
         hash_candidates = (
@@ -185,6 +186,10 @@ class Backend:
 
         if options.args:
             pod_manifest["spec"]["containers"][0]["args"] = options.args
+
+        if options.service_account:
+            self._log.debug(f"Using serviceAccountNam: '{options.service_account}'")
+            pod_manifest["spec"]["serviceAccountName"] = options.service_account
 
         volumes: list[dict[str, Path]] = []
         if options.volumes:

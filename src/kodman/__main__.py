@@ -1,5 +1,4 @@
 import argparse
-import os
 
 from . import __version__
 from .backend import Backend, DeleteOptions, RunOptions
@@ -8,8 +7,13 @@ from .engine import ArgparseEngine, Command
 
 class kodmanEngine(ArgparseEngine):
     def __init__(self):
-        debug = os.getenv("KODMAN_DEBUG") == "true"
-        super().__init__(debug=debug)
+        if debug := self.get_env("KODMAN_DEBUG", bool):
+            super().__init__(debug=debug)
+        else:
+            super().__init__()
+
+        self.get_env("KODMAN_SERVICE_ACCOUNT", str)
+        self.get_env("KODMAN_SYSTEM_TESTING", bool)
         self._parser.add_argument(
             "-v",
             "--version",
@@ -47,7 +51,7 @@ class Run(Command):
         parser_run.add_argument("command", nargs="?")
         parser_run.add_argument("args", nargs=argparse.REMAINDER, default=[])
 
-    def do(self, args, ctx, log):
+    def do(self, args, ctx, env, log):
         ctx.connect()
         log.debug(f"Image: {args.image}")
         pod_name = ""
@@ -63,11 +67,13 @@ class Run(Command):
         log.debug(f"Command: {k8s_command}")
         log.debug(f"Args: {k8s_args}")
 
+        service_a = env["KODMAN_SERVICE_ACCOUNT"]
         options = RunOptions(
             image=args.image,
             command=k8s_command,
             args=k8s_args,
             volumes=args.volume,
+            service_account=service_a if service_a else "",
         )
 
         pod_name = ctx.run(options)
