@@ -28,3 +28,11 @@ DATA_PATH = Path(__file__).parent / "data"
 @pytest.fixture
 def data() -> Path:
     return DATA_PATH
+
+
+ROOT_PATH = Path(__file__).parent.parent
+
+
+@pytest.fixture
+def root() -> Path:
+    return ROOT_PATH

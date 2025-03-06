@@ -24,17 +24,20 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Need this to get version number from last tag
+          fetch-depth: 0
+
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@master
       - run: docker version
       - run: docker pull ubuntu
       - run: kubectl version
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          # Need this to get version number from last tag
-          fetch-depth: 0
+      - run: kubectl apply -f .github/manifests
+      - run: kubectl auth can-i --as=system:serviceaccount:default:default create pods -n default
 
       - if: inputs.python-version == 'dev'
         name: Install dev versions of python packages
