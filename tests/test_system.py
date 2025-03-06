@@ -41,7 +41,7 @@ def test_kodman_run_hello():
     not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
 )
 def test_kodman_run_incluster(root: Path):
-    pod_command = "pip install /kodman > /dev/null 2>&1"
+    pod_command = "pip install /kodman > /dev/null 2>&1 && kodman run --rm hello-world"
     cmd = [
         ENTRY_POINT,
         "run",
@@ -54,9 +54,9 @@ def test_kodman_run_incluster(root: Path):
         "-c",
         pod_command,
     ]
-    assert subprocess.check_output(cmd).decode().strip() == remove_empty_lines(
-        responses.hello_world
-    )
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.stdout.strip() == remove_empty_lines(responses.hello_world)
 
 
 @pytest.mark.skipif(
