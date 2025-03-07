@@ -13,7 +13,6 @@ class kodmanEngine(ArgparseEngine):
             super().__init__()
 
         self.get_env("KODMAN_SERVICE_ACCOUNT", str)
-        self.get_env("KODMAN_SYSTEM_TESTING", bool)
         self._parser.add_argument(
             "-v",
             "--version",

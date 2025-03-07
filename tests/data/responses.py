@@ -13,8 +13,7 @@ options:
 
 environment variables:
   KODMAN_DEBUG  bool
-  KODMAN_SERVICE_ACCOUNT  str
-  KODMAN_SYSTEM_TESTING  bool"""
+  KODMAN_SERVICE_ACCOUNT  str"""
 
 hello_world = """Hello from Docker!
 This message shows that your installation appears to be working correctly.
