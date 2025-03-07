@@ -87,7 +87,7 @@ class Version(Command):
     def add(self, parser):
         parser.add_parser("version", help="Display the kodman version information")
 
-    def do(self, args, ctx, log):
+    def do(self, args, ctx, env, log):
         print(__version__)
 
 
