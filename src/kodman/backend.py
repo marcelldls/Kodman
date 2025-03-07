@@ -208,6 +208,10 @@ class Backend:
                 else:
                     self._log.debug(f"Volume target {src} is a file")
                     dst_mount = dst.parent
+                    if dst_mount.parent == Path("/"):
+                        raise NotImplementedError(
+                            "Root mounting of files not supported by k8s 'emptyDir'"
+                        )
 
                 volumes.append({"src": src, "dst": dst})  # cache for later
 
