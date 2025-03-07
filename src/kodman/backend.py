@@ -60,14 +60,10 @@ def cp_k8s(
 ):
     log.info(f"Transferring {source_path} to {dest_path}")
     buf = io.BytesIO()
-    if not source_path.is_dir() and dest_path.is_dir():
-        arcname = dest_path.joinpath(source_path.name)
-    else:
-        arcname = dest_path
 
     log.debug(f"Compressing {source_path}")
     with tarfile.open(fileobj=buf, mode="w:tar") as tar:  # To compress set 'w:gz'
-        tar.add(source_path, arcname=arcname)
+        tar.add(source_path, arcname=dest_path)
     buf.seek(0)
     compressed_size = buf.getbuffer().nbytes
     log.debug(f"Compressed to {compressed_size} bytes")
@@ -196,21 +192,34 @@ class Backend:
             for i, options_volume in enumerate(options.volumes):
                 process = options_volume.split(":")
                 src = Path(process[0]).resolve()
-                dst = src  # If no dst, set same as src
+                if not src.exists():
+                    raise FileNotFoundError(f"{src} does not exist")
+                dst = src  # In case no dst, set same as src
                 try:
                     dst = Path(process[1])
                 except IndexError:
                     pass
                 if not dst.is_absolute():
                     raise ValueError("Destination path must be absolute")
-                volumes.append({"src": src, "dst": dst})  # cache for later
                 self._log.info(f"Mount: {src} to {dst}")
+                if src.is_dir():
+                    self._log.debug(f"Volume target {src} is a directory")
+                    dst_mount = dst
+                else:
+                    self._log.debug(f"Volume target {src} is a file")
+                    dst_mount = dst.parent
+                    if dst_mount == Path("/"):
+                        raise NotImplementedError(
+                            "Root mounting of files not supported by k8s 'emptyDir'"
+                        )
+
+                volumes.append({"src": src, "dst": dst})  # cache for later
 
                 pod_manifest["spec"]["initContainers"][0]["volumeMounts"].append(
-                    {"name": f"shared-data-{i}", "mountPath": str(dst)}
+                    {"name": f"shared-data-{i}", "mountPath": str(dst_mount)}
                 )
                 pod_manifest["spec"]["containers"][0]["volumeMounts"].append(
-                    {"name": f"shared-data-{i}", "mountPath": str(dst)}
+                    {"name": f"shared-data-{i}", "mountPath": str(dst_mount)}
                 )
                 pod_manifest["spec"]["volumes"].append(
                     {
@@ -218,6 +227,8 @@ class Backend:
                         "emptyDir": {},
                     }
                 )
+
+        self._log.debug(f"Pod manifest = {pod_manifest}")
 
         # Schedule pod and block until ready
         self._log.info(f"Creating pod: {unique_pod_name}")

@@ -106,7 +106,7 @@ def test_kodman_run_exitcodes():
 @pytest.mark.skipif(
     not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
 )
-def test_docker_run_mount(data: Path):
+def test_docker_run_mount_dir(data: Path):
     FILE_MOUNT = "to_mount.txt"
     cmd = [
         DOCKER_PROVIDER,
@@ -119,14 +119,13 @@ def test_docker_run_mount(data: Path):
         "-c",
         f"cat test/{FILE_MOUNT}",
     ]
-
     assert subprocess.check_output(cmd).decode().strip() == responses.mount
 
 
 @pytest.mark.skipif(
     not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
 )
-def test_kodman_run_mount(data: Path):
+def test_kodman_run_mount_dir(data: Path):
     FILE_MOUNT = "to_mount.txt"
     cmd = [
         ENTRY_POINT,
@@ -141,6 +140,67 @@ def test_kodman_run_mount(data: Path):
     ]
 
     assert subprocess.check_output(cmd).decode().strip() == responses.mount
+
+
+def test_docker_run_mount_file(data: Path):
+    FILE_MOUNT = "to_mount.txt"
+    FILE_NEW = "to_read.txt"
+    cmd = [
+        DOCKER_PROVIDER,
+        "run",
+        "-v",
+        f"{data}/{FILE_MOUNT}:/test/{FILE_NEW}",
+        "--rm",
+        "ubuntu",
+        "bash",
+        "-c",
+        f"cat test/{FILE_NEW}",
+    ]
+
+    assert subprocess.check_output(cmd).decode().strip() == responses.mount
+
+
+@pytest.mark.skipif(
+    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
+)
+def test_kodman_run_mount_file(data: Path):
+    FILE_MOUNT = "to_mount.txt"
+    FILE_NEW = "to_read.txt"
+    cmd = [
+        ENTRY_POINT,
+        "run",
+        "-v",
+        f"{data}/{FILE_MOUNT}:/test/{FILE_NEW}",
+        "--rm",
+        "ubuntu",
+        "bash",
+        "-c",
+        f"cat test/{FILE_NEW}",
+    ]
+
+    assert subprocess.check_output(cmd).decode().strip() == responses.mount
+
+
+@pytest.mark.skipif(
+    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
+)
+def test_kodman_run_mount_root(data: Path):
+    FILE_MOUNT = "to_mount.txt"
+    FILE_NEW = "to_read.txt"
+    cmd = [
+        ENTRY_POINT,
+        "run",
+        "-v",
+        f"{data}/{FILE_MOUNT}:/{FILE_NEW}",
+        "--rm",
+        "ubuntu",
+        "bash",
+        "-c",
+        f"cat test/{FILE_NEW}",
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 1
 
 
 @pytest.mark.skipif(
