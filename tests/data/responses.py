@@ -1,7 +1,5 @@
 help_screen = """usage: kodman [-h] [-v] {run,version} ...
 
-Main program
-
 positional arguments:
   {run,version}
     run          Run a command in a new container
