@@ -94,7 +94,12 @@ class ArgparseEngine:
     def _process_env(self):
         message = "environment variables:\n"
         for env, _type in self._env_types.items():
-            message += f"  {env}  {_type.__name__}\n"
+            message_prefix = f"  {env}  {_type.__name__}"
+            message_body = (
+                f"  (current: {self._env_vals[env]})" if self._env_vals[env] else ""
+            )
+            message_suffix = "\n"
+            message += message_prefix + message_body + message_suffix
         self._parser.epilog = message
 
     def launch(self):
