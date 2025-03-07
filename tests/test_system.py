@@ -184,6 +184,28 @@ def test_kodman_run_mount_file(data: Path):
 @pytest.mark.skipif(
     not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
 )
+def test_kodman_run_mount_root(data: Path):
+    FILE_MOUNT = "to_mount.txt"
+    FILE_NEW = "to_read.txt"
+    cmd = [
+        ENTRY_POINT,
+        "run",
+        "-v",
+        f"{data}/{FILE_MOUNT}:/{FILE_NEW}",
+        "--rm",
+        "ubuntu",
+        "bash",
+        "-c",
+        f"cat test/{FILE_NEW}",
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 1
+
+
+@pytest.mark.skipif(
+    not KODMAN_SYSTEM_TESTING, reason="export KODMAN_SYSTEM_TESTING=true"
+)
 def test_kodman_run_mount_large(data: Path):
     with tempfile.TemporaryDirectory() as tmpdirname:
         temp_dir = Path(tmpdirname)
