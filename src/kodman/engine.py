@@ -1,13 +1,12 @@
 import argparse
 import logging
-import os
 import sys
 from abc import ABC, abstractmethod
-from typing import TypeVar
+from typing import overload
 
 from rich.console import Console
 
-T = TypeVar("T", str, bool, int)
+from .utilities import get_env as _get_env
 
 
 class Command(ABC):
@@ -64,32 +63,23 @@ class ArgparseEngine:
     def add_command(self, command: type[Command]):
         self._commands.append(command())
 
-    def get_env(self, variable: str, expected_type: type[T]) -> T | None:
-        val = os.getenv(variable)
+    @overload
+    def get_env(self, variable: str, expected_type: type[bool]) -> bool | None: ...
 
-        if val is None:
-            val = None
-        elif expected_type is bool:
-            if val.lower() in ("true", "1"):
-                val = True
-            elif val.lower() in ("false", "0"):
-                val = False
-            else:
-                val = None
-        elif expected_type is int:
-            try:
-                val = int(val)
-            except ValueError:
-                val = None
-        elif expected_type is str:
-            pass
-        else:
-            raise TypeError(f"Unsupported type: {expected_type}")
+    @overload
+    def get_env(self, variable: str, expected_type: type[int]) -> int | None: ...
 
+    @overload
+    def get_env(self, variable: str, expected_type: type[str]) -> str | None: ...
+
+    def get_env(
+        self, variable: str, expected_type: type[bool | int | str]
+    ) -> bool | int | str | None:
+        val = _get_env(variable, expected_type)
         self._env_types[variable] = expected_type
         self._env_vals[variable] = val
 
-        return val  # type: ignore
+        return val
 
     def _process_env(self):
         message = "environment variables:\n"
