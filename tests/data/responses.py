@@ -1,7 +1,5 @@
 help_screen = """usage: kodman [-h] [-v] {run,version} ...
 
-Main program
-
 positional arguments:
   {run,version}
     run          Run a command in a new container
@@ -9,7 +7,11 @@ positional arguments:
 
 options:
   -h, --help     show this help message and exit
-  -v, --version  show program's version number and exit"""
+  -v, --version  show program's version number and exit
+
+environment variables:
+  KODMAN_DEBUG  bool
+  KODMAN_SERVICE_ACCOUNT  str"""
 
 hello_world = """Hello from Docker!
 This message shows that your installation appears to be working correctly.

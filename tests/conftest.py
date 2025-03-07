@@ -36,3 +36,16 @@ ROOT_PATH = Path(__file__).parent.parent
 @pytest.fixture
 def root() -> Path:
     return ROOT_PATH
+
+
+@pytest.fixture
+def env_vars(mocker):
+    mocker.patch.dict(
+        os.environ,
+        {
+            "KODMAN_TEST_STRING": "Test",
+            "KODMAN_TEST_BOOL_TRUE": "true",
+            "KODMAN_TEST_BOOL_FALSE": "false",
+            "KODMAN_TEST_INT": "99",
+        },
+    )
