@@ -44,7 +44,8 @@ def env_vars(mocker):
         os.environ,
         {
             "KODMAN_TEST_STRING": "Test",
-            "KODMAN_TEST_BOOL": "true",
+            "KODMAN_TEST_BOOL_TRUE": "true",
+            "KODMAN_TEST_BOOL_FALSE": "false",
             "KODMAN_TEST_INT": "99",
         },
     )
